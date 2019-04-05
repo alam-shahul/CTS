@@ -1,0 +1,19 @@
+{
+  "background_path_regex": "RawData/180919 - round 6 blanks/*", 
+  "source_path_regex": "RawData/*/40x tissue [1-8] *[1-5].nd2",
+  "fov_order_map_path": "FOVOrderMaps/20181016.npy",
+  "context_to_channel_map_path": "RoundToChannelMaps/20181016.json",
+  "ordered_channels": ["conf-405", "Conf-488", "conf-561", "conf-640"],
+  "outpath": "../ProcessedImages/20181016",
+  "tissue_directory_regex": "../ProcessedImages/20181016/ThresholdingTestRawImages/tissue[1-8]/images/",
+  "round_directory_regex": "../ProcessedImages/20181016/ThresholdingTestRawImages/tissue[1-8]/images/*/",
+  "background_scaling_factors": {"conf-405": 1, "Conf-488": 1.5, "conf-561": 1.15, "conf-640": 1.35},
+  "height": 2048,
+  "width": 2048,
+  "cols": 3,
+  "rows": 3,
+  "channel_threshold_filepath": "channel_thresholds.json",
+  "blank_round_number": 6,
+  "filter_width": 16,
+  "tile_size": 256
+}
