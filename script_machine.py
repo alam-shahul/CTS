@@ -24,7 +24,8 @@ Steps taken during preprocessing:
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--parameter-filepath', help='Path to JSON file containing parameters necessary for scripts to run')
-parser.add_argument('--script-index', help='Index of script in pipeline to run', type=int)
+parser.add_argument('--start', help='Index of first script in pipeline to run', type=int)
+parser.add_argument('--end', help='Index of last script in pipeline to run', type=int)
 args, _ = parser.parse_known_args()
 
 filepath = args.parameter_filepath
@@ -51,13 +52,19 @@ function_specification = [
     register_and_tile_images
 ]
 
-if args.script_index > len(parameter_specification):
-    raise ValueError("Not a valid script_index.")
-    
-necessary_parameters = parameter_specification[args.script_index]
-missing_parameters = [key for key in necessary_parameters if key not in parameters]
-if missing_parameters:
-    raise ValueError("The input JSON file is missing the following necessary parameters: {}".format(missing_parameters))
+if args.start > args.end:
+    raise ValueError("Last index must be larger than first index.")
 
-script_function = function_specification[args.script_index]
-script_function(*[parameters[key] for key in necessary_parameters])
+for index in range(args.start, args.end + 1):
+    if index > len(parameter_specification):
+        raise ValueError("Not a valid script_index.")
+        
+    necessary_parameters = parameter_specification[index]
+    missing_parameters = [key for key in necessary_parameters if key not in parameters]
+    if missing_parameters:
+        raise ValueError("The input JSON file is missing the following necessary parameters: {}".format(missing_parameters))
+    
+    script_function = function_specification[index]
+    print("Starting script %d" % index)
+    script_function(*[parameters[key] for key in necessary_parameters])
+    print("Finished script %d!" % index)

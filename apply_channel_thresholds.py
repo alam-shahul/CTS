@@ -1,16 +1,5 @@
 from util import *
 
-def apply_threshold_and_rescale(channel_slice, lower_threshold, upper_threshold):
-    datatype = channel_slice.dtype
-    max_value = np.iinfo(datatype).max
-
-    channel_slice = np.clip(channel_slice, lower_threshold, upper_threshold)
-
-    channel_slice = channel_slice - lower_threshold
-    thresholded_slice = np.rint(channel_slice/channel_slice.ptp() * max_value).astype(datatype)
-
-    return thresholded_slice
-
 def apply_channel_thresholds(tissue_directory_regex, ordered_channels, channel_threshold_filepath, blank_round_number): 
     round_subdirectory_regex = "round*/"
     blank_round_string = "round%d/" % blank_round_number
@@ -56,20 +45,3 @@ if __name__ == '__main__':
     channel_threshold_filepath = args.channel_threshold_filepath
 
     apply_channel_thresholds(args.tissue_directory_regex, args.ordered_channels, args.channel_threshold_filepathargs.blank_round_number)
-
-    #tissue_directories = glob.glob(tissue_directory_regex)[:1]
-    #f = open(args.thresholds)
-    #thresholds = [line.strip().split() for line in f]
-    #f.close()
-    #thresholds = [[int(t[0]),int(t[1])] for t in thresholds]
-    #FP = glob.glob(os.path.join(args.basepath,'*','*','stitched.tiff'))
-    #for fp in FP:
-    #    outfile = fp.replace('.tiff','.threshold.tiff')
-    #    if (args.keep_existing and not os.path.isfile(outfile)) or (not args.keep_existing):
-    #        im = imageio.imread(fp)
-    #        new_im = np.zeros(im.shape,dtype=im.dtype)
-    #        for i in range(im.shape[-1]):
-    #            im_i = apply_threshold_and_scale(im[:,:,i],thresholds[i][0],thresholds[i][1])
-    #            new_im[:,:,i] = im_i
-    #        imageio.imwrite(outfile,new_im)
-    #        print(fp)

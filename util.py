@@ -1,27 +1,21 @@
 import numpy as np
-from scipy import ndimage
 import imageio
-from pims import ND2_Reader
 import glob, os
 import re
-
-# For new code - 1/7/19
-from collections import defaultdict
 import argparse
-
-# For yet newer code - 1/16/19
-from skimage.feature import register_translation
-from skimage.transform import rescale
-from scipy.ndimage import fourier_shift
-from scipy import ndimage
-from scipy.misc import imsave
-from scipy.ndimage import gaussian_filter
 import pickle
 import json
 import pyfftw
 
-# For even newer code - 3/5/19
+from scipy import ndimage
 from scipy.ndimage import median_filter
+from scipy.ndimage import fourier_shift
+from scipy.ndimage import gaussian_filter
+from scipy.misc import imsave
+from skimage.feature import register_translation
+from skimage.transform import rescale
+from pims import ND2_Reader
+from collections import defaultdict
 from ast import literal_eval
 
 def adjust_contrast(image, c0=10, c1=0.3, eps=1e-5, ptile=99.5):
@@ -243,4 +237,55 @@ def apply_shifts(image, shift):
         #offset_image.append(np.fft.ifftn(offset_im))
     offset_image = np.transpose(offset_image, axes = [1, 2, 0]).astype(np.float32)
     return offset_image
+
+def find_all_shifts(ref_image, other_images):
+    shifts = []
+    for other_image in other_images:
+        shift = find_shift(ref_image, other_image, scale=0.25)
+        shifts.append(shift)
+    return shifts
+
+def crop_all_shifted(images, shifts):
+    min_y_shift, min_x_shift = np.min(shifts,axis=0).astype(np.int)
+    max_y_shift, max_x_shift = np.max(shifts,axis=0).astype(np.int)
+    if min_y_shift < 0:
+        images = images[:, :min_y_shift]
+    if max_y_shift > 0:
+        images = images[:, max_y_shift:]
+    if min_x_shift < 0:
+        images = images[:, :, :min_x_shift]
+    if max_x_shift > 0:
+        images = images[:, :, max_x_shift:]
+    return images
+
+def tilify(image, tile_size):
+    rows, columns, _ = image.shape
+    tiles = []
+    tile_pattern = []
+    tile_index = 0
+    for row in range(0, rows, tile_size):
+        tile_row = []
+        for column in range(0, columns, tile_size):
+            cutout = image[row:row+tile_size, column:column+tile_size]
+            actual_height, actual_width, _ = cutout.shape
+            tile = np.pad(cutout, [(0, tile_size - actual_height), (0, tile_size - actual_width), (0, 0)], 'constant')
+            tiles.append(tile)
+            tile_row.append(tile_index)
+            tile_index += 1
+        tile_pattern.append(tile_row)
+    tiles = np.array(tiles)
+    tile_pattern = np.array(tile_pattern)    
+
+    return tiles, tile_pattern
+
+def apply_threshold_and_rescale(channel_slice, lower_threshold, upper_threshold):
+    datatype = channel_slice.dtype
+    max_value = np.iinfo(datatype).max
+
+    channel_slice = np.clip(channel_slice, lower_threshold, upper_threshold)
+
+    channel_slice = channel_slice - lower_threshold
+    thresholded_slice = np.rint(channel_slice/channel_slice.ptp() * max_value).astype(datatype)
+
+    return thresholded_slice
 

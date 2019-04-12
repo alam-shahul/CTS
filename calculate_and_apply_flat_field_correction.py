@@ -33,7 +33,6 @@ def calculate_and_apply_flat_field_correction(tissue_directory_regex, blank_roun
                 actual_height, actual_width, _ = cutout.shape
                 padded_cutout[:actual_height, :actual_width] = cutout
                 fov_cutouts.append(padded_cutout)
-            print(padded_cutout.shape)
 
     #fov_cutouts = np.array(fov_cutouts)
     filter_sigma = height // filter_width
@@ -50,40 +49,6 @@ def calculate_and_apply_flat_field_correction(tissue_directory_regex, blank_roun
     inverse_field = 1/flat_field
     inverse_field /= inverse_field.max()
     
-    #FP = glob.glob(os.path.join(tissue_directory_regex, '*', '*', registered_coordinates_filename))
-    #FP = [fp for fp in FP if fp not in FP_blanks]
-    #if args.existing_flat_field is None:
-    #   flat_field = np.zeros((args.size,args.size))
-    #   fov_count = 0
-    #   for fp in FP:
-    #       fovs = []
-    #       coords = []
-    #       f = open(fp)
-    #       header = [f.readline() for _ in range(4)]
-    #       for line in f:
-    #           ls = line.strip().split(';')
-    #           fovs.append(ls[0])
-    #           coords.append(literal_eval(ls[2].strip()))
-    #       f.close()
-    #       coords = np.rint(coords).astype(np.int)
-    #       coords[:,0] -= coords[:,0].min()
-    #       coords[:,1] -= coords[:,1].min()
-    #       image = imageio.imread(fp.replace("stitching_coordinates.registered.txt", "thresholded.tiff"))
-    #       image = np.average(image[:,:,:3],axis=2)
-    #       for coord in coords:
-    #           coord[0] = min(image.shape[1]-args.size,coord[0])
-    #           coord[1] = min(image.shape[0]-args.size,coord[1])
-    #           flat_field += image[coord[1]:coord[1]+args.size, coord[0]:coord[0]+args.size]
-    #           fov_count += 1
-    #   flat_field /= fov_count
-    #   flat_field = gaussian_filter(flat_field, args.size//args.filter_width)
-    #   print('done calculating flat field')
-    #   np.save('%s/flat_field.npy' % tissue_directory_regex, flat_field)
-    #else:
-    #   flat_field = np.load(args.existing_flat_field)
-    #inverse_field = 1/flat_field
-    #inverse_field /= inverse_field.max()
-    
     for tissue_directory in tissue_directories:
         round_directory_regex = tissue_directory + round_subdirectory_regex
         round_directories = glob.glob(round_directory_regex)
@@ -93,9 +58,8 @@ def calculate_and_apply_flat_field_correction(tissue_directory_regex, blank_roun
             if round_directory == blank_round_directory:
                 continue
             np.save('%s/flat_field.npy' % round_directory, flat_field)
-            print(np.sum(flat_field.astype(np.uint16)))
             imageio.imsave('%s/flat_field.tiff' % round_directory, flat_field.astype(np.uint16))
-            print(round_directory)
+            #print(round_directory)
 
             stitched_coordinates_filepath = os.path.join(round_directory, registered_coordinates_filename)
             filename_to_coordinates, max_x, max_y = parse_coordinates_file(stitched_coordinates_filepath)
@@ -106,42 +70,13 @@ def calculate_and_apply_flat_field_correction(tissue_directory_regex, blank_roun
             for filename in filename_to_coordinates:
                 current_x, current_y = filename_to_coordinates[filename]
                 fov = round_image[current_y : current_y + height, current_x : current_x + width]
-                print(fov.shape)
+                #print(fov.shape)
                 corrected_round_image[current_y : current_y + height, current_x : current_x + width] = fov * inverse_field[:fov.shape[0], :fov.shape[1]]
 
             corrected_round_image = corrected_round_image.astype(np.uint16)    
-            print(corrected_round_image.shape)
+            #print(corrected_round_image.shape)
             corrected_filepath = os.path.join(round_directory, corrected_filename)
             imageio.imwrite(corrected_filepath, corrected_round_image)
-
-    #for fp in FP:
-    #   fovs = []
-    #   coords = []
-    #   f = open(fp)
-    #   header = [f.readline() for _ in range(4)]
-    #   for line in f:
-    #       ls = line.strip().split(';')
-    #       fovs.append(ls[0])
-    #       coords.append(literal_eval(ls[2].strip()))
-    #   f.close()
-    #   coords = np.rint(coords).astype(np.int)
-    #   coords[:,0] -= coords[:,0].min()
-    #   coords[:,1] -= coords[:,1].min()
-    #   image = imageio.imread(fp.replace('DAPI.conf-405/TileConfiguration.registered.txt','stitched.threshold.tiff'))
-    #   image_corrected = np.zeros(image.shape)
-    #   for coord in coords:
-    #       coord[0] = min(image.shape[1]-args.size,coord[0])
-    #       coord[1] = min(image.shape[0]-args.size,coord[1])
-    #       x = np.transpose(image[coord[1]:coord[1]+args.size, coord[0]:coord[0]+args.size],axes=[2,0,1])*inverse_field
-    #       image_corrected[coord[1]:coord[1]+args.size, coord[0]:coord[0]+args.size] = np.transpose(x,axes=[1,2,0])
-    #   dt = image.dtype
-    #   max_scale = np.iinfo(dt).max
-    #   #for i in range(im_corrected.shape[2]):
-    #   #   im_corrected[:,:,i] = np.rint(im_corrected[:,:,i]/im_max*max_scale)
-    #   image_corrected = np.rint(image_corrected).astype(dt)
-    #   outpath = fp.replace('DAPI.conf-405/TileConfiguration.registered.txt','stitched.threshold.corrected.tiff')
-    #   imageio.imwrite(outpath,image_corrected)
-    #   print(outpath)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

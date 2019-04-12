@@ -1,21 +1,14 @@
 from util import *
 
 def parse_and_z_project(background_path_regex, source_path_regex, fov_order_map_path, context_to_channel_map_path, outpath):
-
-    #with open(context_to_channel_map_path, 'rb') as handle:
-    #    context_to_channel_map = pickle.load(handle)
-    
     with open(context_to_channel_map_path, 'r') as handle:
         context_to_channel_map = json.load(handle)
     
     MAX_INTENSITY = np.iinfo(np.uint16).max
    
-    print(context_to_channel_map)
 
     background_filepaths = sorted(glob.glob(background_path_regex), key = lambda filepath: filepath.split('/')[-1])
-    print(background_filepaths)
     source_filepaths = sorted(glob.glob(source_path_regex), key = lambda filepath: filepath.split('/')[-1])
-    print(source_filepaths)
    
     fov_order_map = np.load(fov_order_map_path)
 
@@ -35,8 +28,6 @@ def parse_and_z_project(background_path_regex, source_path_regex, fov_order_map_
         num_fov, num_channels, num_rows, num_columns = source_images.shape
 
         for channel_index, channel in enumerate(channels):
-            print(channels)
-            print(np.sum(np.sum(np.sum(source_images, axis = 3), axis = 2), axis = 0))
             for fov_index, fov in enumerate(fields_of_view):
                 source_image = source_images[fov_index, channel_index]
 
@@ -44,10 +35,7 @@ def parse_and_z_project(background_path_regex, source_path_regex, fov_order_map_
                 reduced_source_image = source_image
 
                 if channel == 'conf-405':
-                    #print(normalize_and_convert_to_16_bit(source_image))
-                    
                     channel_label = 'DAPI_%s' % round_number
-
                     context_to_channel_map[tissue][round_number][channel] = channel_label
                 else:
                     channel_label = context_to_channel_map[tissue][round_number][channel]
@@ -55,10 +43,10 @@ def parse_and_z_project(background_path_regex, source_path_regex, fov_order_map_
                 with open(context_to_channel_map_path, 'w') as handle:
                     json.dump(context_to_channel_map, handle, sort_keys=True, indent=4)
 
-                os.makedirs(outpath + '/ThresholdingTestRawImages/%s/images/%s/%s.%s' % (tissue, round_number, channel_label, channel), exist_ok=True)
-                imageio.imwrite(outpath + '/ThresholdingTestRawImages/%s/images/%s/%s.%s/fov_%d.png' % (tissue, round_number, channel_label, channel, fov_index), reduced_source_image)
-                os.makedirs(outpath + '/ThresholdingTestRawImages/%s/arrays/%s/%s.%s' % (tissue, round_number, channel_label, channel), exist_ok=True)
-                np.save(outpath + '/ThresholdingTestRawImages/%s/arrays/%s/%s.%s/fov_%d.png' % (tissue, round_number, channel_label, channel, fov_index), reduced_source_image)
+                os.makedirs(outpath + '/%s/images/%s/%s.%s' % (tissue, round_number, channel_label, channel), exist_ok=True)
+                imageio.imwrite(outpath + '/%s/images/%s/%s.%s/fov_%d.png' % (tissue, round_number, channel_label, channel, fov_index), reduced_source_image)
+                os.makedirs(outpath + '/%s/arrays/%s/%s.%s' % (tissue, round_number, channel_label, channel), exist_ok=True)
+                np.save(outpath + '/%s/arrays/%s/%s.%s/fov_%d.png' % (tissue, round_number, channel_label, channel, fov_index), reduced_source_image)
 
 
 if __name__=="__main__":
